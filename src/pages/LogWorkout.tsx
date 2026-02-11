@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import PageLayout from '../components/PageLayout';
+import RestTimer, { QuickAdjustButtons, SetCompleteButton } from '../components/RestTimer';
+import { useToast } from '../components/Toast';
 import { Workout, WorkoutExercise, ExerciseSet } from '../types';
-import { saveWorkout } from '../utils/storage';
+import { saveWorkout, getUserProfile, saveUserProfile, getAllWorkouts } from '../utils/storage';
 import { exerciseDatabase } from '../data/exercises';
+import { calculateWorkoutXP, calculateStreak } from '../utils/gamification';
+import { Clock, X, Search, Trash2 } from 'lucide-react';
 
 const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const [workoutName, setWorkoutName] = useState('');
@@ -12,6 +16,29 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [startTime] = useState(new Date().toISOString());
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const restDuration = 90; // default 90 seconds
+  const { showToast } = useToast();
+
+  // Workout timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - new Date(startTime).getTime()) / 1000);
+      setElapsedTime(elapsed);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [startTime]);
+
+  const formatElapsedTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const filteredExercises = exerciseDatabase.filter(ex =>
     ex.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -41,11 +68,18 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
 
   const updateSet = (exerciseIndex: number, setIndex: number, field: keyof ExerciseSet, value: any) => {
     const updatedExercises = [...exercises];
+    const wasCompleted = updatedExercises[exerciseIndex].sets[setIndex].completed;
+    
     updatedExercises[exerciseIndex].sets[setIndex] = {
       ...updatedExercises[exerciseIndex].sets[setIndex],
       [field]: value
     };
     setExercises(updatedExercises);
+
+    // Start rest timer when a set is completed
+    if (field === 'completed' && value === true && !wasCompleted) {
+      setShowRestTimer(true);
+    }
   };
 
   const removeExercise = (exerciseIndex: number) => {
@@ -64,12 +98,12 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
 
   const saveWorkoutData = async () => {
     if (!workoutName.trim()) {
-      alert('Please enter a workout name');
+      showToast('Please enter a workout name', 'warning');
       return;
     }
 
     if (exercises.length === 0) {
-      alert('Please add at least one exercise');
+      showToast('Please add at least one exercise', 'warning');
       return;
     }
 
@@ -89,12 +123,24 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
 
     await saveWorkout(workout);
     
+    // Award XP and update profile
+    const profile = await getUserProfile();
+    const xpEarned = calculateWorkoutXP(workout);
+    profile.xp += xpEarned;
+    
+    // Update streak
+    const allWorkouts = await getAllWorkouts();
+    profile.currentStreak = calculateStreak(allWorkouts);
+    profile.longestStreak = Math.max(profile.longestStreak, profile.currentStreak);
+    
+    await saveUserProfile(profile);
+    
     // Reset form
     setWorkoutName('');
     setWorkoutNotes('');
     setExercises([]);
     
-    alert('Workout saved successfully! 💪');
+    showToast(`Workout saved! +${xpEarned} XP earned 💪`, 'success');
     if (onComplete) onComplete();
   };
 
@@ -117,11 +163,24 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
       }
     >
       <div className="max-w-4xl mx-auto">
+        {/* Workout Timer */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-dark rounded-2xl p-4 mb-6 border border-white/10"
+        >
+          <div className="flex items-center justify-center gap-3">
+            <Clock className="w-5 h-5 text-accent-blue" />
+            <span className="text-sm text-gray-400">Workout Duration:</span>
+            <span className="text-2xl font-bold text-accent-blue">{formatElapsedTime(elapsedTime)}</span>
+          </div>
+        </motion.div>
+
         {/* Workout Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-dark rounded-2xl p-6 mb-6"
+          className="glass-dark rounded-2xl p-6 mb-6 border border-white/10"
         >
           <div className="space-y-4">
             <div>
@@ -154,65 +213,74 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
               key={exerciseIndex}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="glass-dark rounded-2xl p-6"
+              className="glass-dark rounded-2xl p-6 border border-white/10"
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold">{getExerciseName(exercise.exerciseId)}</h3>
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => removeExercise(exerciseIndex)}
-                  className="text-red-400 hover:text-red-300 transition-colors"
+                  className="text-red-400 hover:text-red-300 transition-colors p-2"
                 >
-                  ✕
-                </button>
+                  <Trash2 className="w-5 h-5" />
+                </motion.button>
               </div>
 
               <div className="space-y-3">
+                <div className="grid grid-cols-12 gap-2 text-xs text-gray-400 font-medium mb-2 px-2">
+                  <div className="col-span-1">Set</div>
+                  <div className="col-span-5">Weight (lbs)</div>
+                  <div className="col-span-5">Reps</div>
+                  <div className="col-span-1"></div>
+                </div>
+                
                 {exercise.sets.map((set, setIndex) => (
-                  <div key={setIndex} className="flex items-center space-x-3">
-                    <div className="w-12 text-center text-gray-400 font-medium">
+                  <div key={setIndex} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-1 text-center text-gray-400 font-medium">
                       {setIndex + 1}
                     </div>
-                    <input
-                      type="number"
-                      value={set.weight || ''}
-                      onChange={(e) => updateSet(exerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
-                      placeholder="Weight"
-                      className="flex-1 px-4 py-2 bg-dark-lighter rounded-lg border border-white/10 focus:border-accent-blue focus:outline-none"
-                    />
-                    <span className="text-gray-400">×</span>
-                    <input
-                      type="number"
-                      value={set.reps || ''}
-                      onChange={(e) => updateSet(exerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
-                      placeholder="Reps"
-                      className="flex-1 px-4 py-2 bg-dark-lighter rounded-lg border border-white/10 focus:border-accent-blue focus:outline-none"
-                    />
-                    <button
-                      onClick={() => updateSet(exerciseIndex, setIndex, 'completed', !set.completed)}
-                      className={`w-10 h-10 rounded-lg transition-all ${
-                        set.completed 
-                          ? 'bg-accent-green text-white' 
-                          : 'bg-dark-lighter border border-white/10 text-gray-400'
-                      }`}
-                    >
-                      {set.completed ? '✓' : ''}
-                    </button>
-                    <button
-                      onClick={() => removeSet(exerciseIndex, setIndex)}
-                      className="w-10 h-10 rounded-lg bg-dark-lighter border border-white/10 text-red-400 hover:bg-red-400/10 transition-all"
-                    >
-                      ✕
-                    </button>
+                    <div className="col-span-5">
+                      <QuickAdjustButtons
+                        value={set.weight}
+                        onChange={(val) => updateSet(exerciseIndex, setIndex, 'weight', val)}
+                        step={5}
+                        label="lbs"
+                      />
+                    </div>
+                    <div className="col-span-5">
+                      <QuickAdjustButtons
+                        value={set.reps}
+                        onChange={(val) => updateSet(exerciseIndex, setIndex, 'reps', val)}
+                        step={1}
+                        label="reps"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <SetCompleteButton
+                        completed={set.completed}
+                        onClick={() => updateSet(exerciseIndex, setIndex, 'completed', !set.completed)}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <button
-                onClick={() => addSet(exerciseIndex)}
-                className="mt-4 w-full py-2 border border-dashed border-white/20 rounded-lg text-gray-400 hover:border-accent-blue hover:text-accent-blue transition-all"
-              >
-                + Add Set
-              </button>
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => addSet(exerciseIndex)}
+                  className="flex-1 py-2 border border-dashed border-white/20 rounded-lg text-gray-400 hover:border-accent-blue hover:text-accent-blue transition-all text-sm font-medium"
+                >
+                  + Add Set
+                </button>
+                {exercise.sets.length > 1 && (
+                  <button
+                    onClick={() => removeSet(exerciseIndex, exercise.sets.length - 1)}
+                    className="px-4 py-2 border border-dashed border-red-400/20 rounded-lg text-red-400 hover:border-red-400 transition-all text-sm font-medium"
+                  >
+                    Remove Last
+                  </button>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -228,59 +296,78 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
         </motion.button>
 
         {/* Exercise Picker Modal */}
-        {showExercisePicker && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowExercisePicker(false)}
-          >
+        <AnimatePresence>
+          {showExercisePicker && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              onClick={(e) => e.stopPropagation()}
-              className="glass-dark rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowExercisePicker(false)}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">Select Exercise</h2>
-                <button
-                  onClick={() => setShowExercisePicker(false)}
-                  className="text-gray-400 hover:text-white text-2xl"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search exercises..."
-                className="w-full px-4 py-3 bg-dark-lighter rounded-lg border border-white/10 focus:border-accent-blue focus:outline-none mb-4"
-                autoFocus
-              />
-
-              <div className="overflow-y-auto flex-1">
-                <div className="space-y-2">
-                  {filteredExercises.map(exercise => (
-                    <motion.button
-                      key={exercise.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => addExercise(exercise.id)}
-                      className="w-full text-left px-4 py-3 bg-dark-lighter rounded-lg hover:bg-white/10 transition-all"
-                    >
-                      <div className="font-semibold">{exercise.name}</div>
-                      <div className="text-sm text-gray-400">
-                        {exercise.primaryMuscles.join(', ')}
-                      </div>
-                    </motion.button>
-                  ))}
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="glass-dark rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-white/10"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold">Select Exercise</h2>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowExercisePicker(false)}
+                    className="text-gray-400 hover:text-white transition-colors p-2"
+                  >
+                    <X className="w-6 h-6" />
+                  </motion.button>
                 </div>
-              </div>
+
+                <div className="relative mb-4">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search exercises..."
+                    className="w-full pl-12 pr-4 py-3 bg-dark-lighter rounded-lg border border-white/10 focus:border-accent-blue focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="overflow-y-auto flex-1">
+                  <div className="space-y-2">
+                    {filteredExercises.map(exercise => (
+                      <motion.button
+                        key={exercise.id}
+                        whileHover={{ scale: 1.02, x: 4 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => addExercise(exercise.id)}
+                        className="w-full text-left px-4 py-3 bg-dark-lighter rounded-lg hover:bg-white/10 transition-all border border-white/5"
+                      >
+                        <div className="font-semibold">{exercise.name}</div>
+                        <div className="text-sm text-gray-400 capitalize">
+                          {exercise.primaryMuscles.join(', ')}
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
+        </AnimatePresence>
+
+        {/* Rest Timer */}
+        <AnimatePresence>
+          {showRestTimer && (
+            <RestTimer
+              duration={restDuration}
+              onComplete={() => setShowRestTimer(false)}
+              onSkip={() => setShowRestTimer(false)}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </PageLayout>
   );
