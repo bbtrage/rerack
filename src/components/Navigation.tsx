@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, PlusCircle, History, Activity, TrendingUp, Dumbbell } from 'lucide-react';
+import { Home, PlusCircle, History, Activity, TrendingUp, Dumbbell, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 interface NavigationProps {
   currentPage: string;
@@ -8,6 +10,8 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
+  const { user, signOut } = useAuth();
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'log', label: 'Log', icon: PlusCircle },
@@ -16,6 +20,10 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'exercises', label: 'Exercises', icon: Dumbbell },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -28,7 +36,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
           <p className="text-sm text-gray-400 mt-1">Track your gains</p>
         </div>
         
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           {navItems.map(item => {
             const Icon = item.icon;
             return (
@@ -49,6 +57,21 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
             );
           })}
         </nav>
+
+        {/* Sign Out Button (only show if authenticated with Supabase) */}
+        {isSupabaseConfigured && user && (
+          <div className="mt-auto pt-4 border-t border-white/10">
+            <motion.button
+              onClick={handleSignOut}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 text-gray-300 hover:bg-white/5"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium">Sign Out</span>
+            </motion.button>
+          </div>
+        )}
       </div>
 
       {/* Mobile Bottom Bar */}
