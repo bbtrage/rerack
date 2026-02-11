@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X, Smartphone } from 'lucide-react';
 
+// Configuration constants
+const DISMISSAL_DURATION_DAYS = 3;
+const PROMPT_DELAY_MS = 3000; // 3 seconds
+
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -29,8 +33,8 @@ export default function InstallPrompt() {
 
     // Check if prompt was dismissed recently
     const dismissedAt = localStorage.getItem('installPromptDismissed');
-    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
-    const shouldShow = !dismissedAt || parseInt(dismissedAt) < threeDaysAgo;
+    const dismissalThreshold = Date.now() - (DISMISSAL_DURATION_DAYS * 24 * 60 * 60 * 1000);
+    const shouldShow = !dismissedAt || parseInt(dismissedAt) < dismissalThreshold;
 
     // Listen for beforeinstallprompt event (Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -40,7 +44,7 @@ export default function InstallPrompt() {
       
       if (shouldShow && !standalone) {
         // Show prompt after a short delay to not be intrusive
-        setTimeout(() => setShowPrompt(true), 3000);
+        setTimeout(() => setShowPrompt(true), PROMPT_DELAY_MS);
       }
     };
 
@@ -48,7 +52,7 @@ export default function InstallPrompt() {
 
     // Show iOS prompt if on iOS and not installed
     if (ios && !standalone && shouldShow) {
-      setTimeout(() => setShowPrompt(true), 3000);
+      setTimeout(() => setShowPrompt(true), PROMPT_DELAY_MS);
     }
 
     return () => {

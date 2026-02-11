@@ -3,10 +3,11 @@
 // ReRack Service Worker
 // Provides offline support and caching for the Progressive Web App
 
-const CACHE_NAME = 'rerack-v1';
-const RUNTIME_CACHE = 'rerack-runtime-v1';
-const IMAGE_CACHE = 'rerack-images-v1';
-const API_CACHE = 'rerack-api-v1';
+const VERSION = 'v1';
+const CACHE_NAME = `rerack-${VERSION}`;
+const RUNTIME_CACHE = `rerack-runtime-${VERSION}`;
+const IMAGE_CACHE = `rerack-images-${VERSION}`;
+const API_CACHE = `rerack-api-${VERSION}`;
 
 // Assets to cache immediately on install
 const PRECACHE_ASSETS = [
