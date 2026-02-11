@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Navigation from './components/Navigation';
+import FloatingActionButton from './components/FloatingActionButton';
+import { ToastProvider } from './components/Toast';
 import Dashboard from './pages/Dashboard';
 import LogWorkout from './pages/LogWorkout';
 import WorkoutHistory from './pages/WorkoutHistory';
@@ -30,12 +32,20 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
-      <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
-      <div className="md:ml-64">
-        {renderPage()}
+    <ToastProvider>
+      <div className="min-h-screen bg-dark-bg text-white">
+        <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
+        <div className="md:ml-64 pb-20 md:pb-0">
+          {renderPage()}
+        </div>
+        {currentPage !== 'log' && (
+          <FloatingActionButton 
+            onClick={() => setCurrentPage('log')}
+            label="Start Workout"
+          />
+        )}
       </div>
-    </div>
+    </ToastProvider>
   );
 }
 
