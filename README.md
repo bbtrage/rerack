@@ -1,6 +1,6 @@
 # ReRack - Premium Gym Tracker
 
-A modern, beautiful gym tracking application with smooth animations, dark mode, and comprehensive analytics.
+A modern, beautiful gym tracking application with smooth animations, dark mode, comprehensive analytics, and cloud sync.
 
 ## 🎯 Features
 
@@ -11,7 +11,9 @@ A modern, beautiful gym tracking application with smooth animations, dark mode, 
 - **Analytics Dashboard**: Comprehensive charts and statistics
 - **Progress Tracking**: Monitor strength gains and volume over time
 - **Exercise Library**: Browse all exercises by category and muscle group
-- **Offline Storage**: All data stored locally in your browser
+- **Cloud Sync**: Optional Supabase integration for multi-device sync
+- **Offline Support**: Works offline and syncs when back online
+- **Authentication**: Secure email/password and Google OAuth login
 
 ## 🚀 Getting Started
 
@@ -37,6 +39,76 @@ npm run build
 
 Builds the app for production to the `build` folder.
 
+## ☁️ Supabase Setup (Optional)
+
+ReRack can work in two modes:
+1. **Local-only mode** (default) - All data stored in browser IndexedDB
+2. **Cloud mode** - Data synced to Supabase with offline support
+
+### Setting Up Supabase
+
+1. **Create a Supabase Project**
+   - Go to [https://supabase.com](https://supabase.com)
+   - Create a new project
+   - Wait for the database to be set up
+
+2. **Get Your Credentials**
+   - Go to Project Settings > API
+   - Copy your `Project URL` and `anon/public` API key
+
+3. **Configure Environment Variables**
+   ```bash
+   # Create a .env file in the root directory
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your credentials:
+   ```
+   REACT_APP_SUPABASE_URL=https://your-project.supabase.co
+   REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+
+4. **Run Database Migrations**
+   - Go to your Supabase project dashboard
+   - Navigate to SQL Editor
+   - Copy the contents of `supabase/migrations/001_initial_schema.sql`
+   - Paste and run the migration
+
+5. **Enable Google OAuth (Optional)**
+   - Go to Authentication > Providers
+   - Enable Google provider
+   - Add your Google OAuth credentials
+   - Add authorized redirect URLs
+
+6. **Start the App**
+   ```bash
+   npm start
+   ```
+
+### Local-Only Mode
+
+If you don't set up Supabase, the app works perfectly in local-only mode:
+- All data stored in browser IndexedDB
+- No authentication required
+- Complete privacy (data never leaves your device)
+- All features work except multi-device sync
+
+## 🔄 Data Migration
+
+When you sign up with an existing local account:
+1. The app detects your local workout data
+2. A migration modal appears offering to import your data
+3. Click "Import" to sync your local data to the cloud
+4. Your data is now accessible from any device
+
+## 📡 Offline Support
+
+The app works offline with intelligent syncing:
+- Changes made offline are queued locally
+- When back online, changes automatically sync to Supabase
+- An "Offline" indicator appears when disconnected
+- A "Syncing..." indicator shows during sync operations
+
 ## 🎨 Design Features
 
 - **Modern UI**: Glassmorphism effects, smooth gradients, and elegant shadows
@@ -56,11 +128,50 @@ Builds the app for production to the `build` folder.
 
 ## 🔧 Tech Stack
 
-- **React** with TypeScript
+- **React 19** with TypeScript
 - **Tailwind CSS** for styling
 - **Framer Motion** for animations
 - **Recharts** for data visualization
-- **LocalForage** for persistent storage
+- **Supabase** for authentication and cloud database (optional)
+- **LocalForage** for offline-first storage
+
+## 🗄️ Database Schema
+
+When using Supabase, the following tables are created:
+
+- **profiles** - User profile information
+- **workouts** - Workout sessions with exercises and sets
+- **user_profiles** - Gamification data (XP, level, achievements, streaks)
+- **personal_records** - Exercise-specific PRs
+
+All tables have Row Level Security (RLS) enabled for data privacy.
+
+## 🔐 Security
+
+- Row Level Security (RLS) policies ensure users can only access their own data
+- Supabase auth handles secure authentication
+- API keys use the `anon` key which is safe for client-side use
+- All sensitive operations are protected server-side by Supabase
+
+## 📊 Data Storage Strategy
+
+### Hybrid Approach
+ReRack uses a hybrid storage strategy for optimal performance and reliability:
+
+1. **Primary: Supabase** (when configured and online)
+   - Cloud database for multi-device sync
+   - Real-time updates
+   - Secure authentication
+
+2. **Fallback: LocalForage** (IndexedDB)
+   - Offline-first architecture
+   - Local cache for fast access
+   - Automatic sync when back online
+
+3. **Sync Queue**
+   - Changes made offline are queued
+   - Automatically synced when connectivity restored
+   - Conflict-free operation
 
 ## 💪 Exercise Categories
 
@@ -85,16 +196,23 @@ Core: Abs
 
 ## 📝 Data Storage
 
-All workout data is stored locally in your browser using IndexedDB via LocalForage. Your data persists across sessions and is completely private.
+**Local-Only Mode**: All workout data is stored locally in your browser using IndexedDB via LocalForage. Your data persists across sessions and is completely private.
+
+**Cloud Mode**: When Supabase is configured, data is synced to the cloud while maintaining a local cache for offline access. The app intelligently chooses between Supabase and local storage based on connectivity.
 
 ## 🚀 Future Enhancements
 
-- Personal record tracking per exercise
+- Social features and workout sharing
+- Progressive overload recommendations
 - Rest timer between sets
 - Workout templates
-- Export/import data
-- Share workouts with friends
-- Progressive overload recommendations
+- Export/import data (CSV, JSON)
+- Mobile apps (iOS/Android)
+- Wearable integration
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 

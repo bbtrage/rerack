@@ -1,21 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WifiOff, Wifi, RefreshCw } from 'lucide-react';
+import { WifiOff, RefreshCw } from 'lucide-react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { syncOfflineData } from '../utils/storage';
 
 export default function OfflineIndicator() {
   const isOnline = useOnlineStatus();
   const [syncing, setSyncing] = useState(false);
-  const [justCameOnline, setJustCameOnline] = useState(false);
+  const prevOnlineRef = useRef(isOnline);
 
   useEffect(() => {
-    if (isOnline && !justCameOnline) {
-      setJustCameOnline(true);
+    // Only sync when transitioning from offline to online
+    if (isOnline && !prevOnlineRef.current) {
       handleSync();
-    } else if (!isOnline) {
-      setJustCameOnline(false);
     }
+    prevOnlineRef.current = isOnline;
   }, [isOnline]);
 
   const handleSync = async () => {
@@ -59,3 +58,4 @@ export default function OfflineIndicator() {
     </AnimatePresence>
   );
 }
+

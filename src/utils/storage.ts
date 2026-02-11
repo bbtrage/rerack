@@ -38,12 +38,6 @@ interface SyncOperation {
   timestamp: number;
 }
 
-// Helper to check if user is authenticated
-const getCurrentUserId = (): string | null => {
-  if (!isSupabaseConfigured || !supabase) return null;
-  return supabase.auth.getUser().then(({ data }) => data.user?.id || null).catch(() => null);
-};
-
 // Helper to check if we should use Supabase
 const shouldUseSupabase = async (): Promise<boolean> => {
   if (!isSupabaseConfigured || !supabase) return false;
