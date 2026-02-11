@@ -41,7 +41,11 @@ export async function searchExercises(query: string): Promise<ExerciseDBExercise
     );
 
     if (!response.ok) {
-      console.warn(`ExerciseDB API error: ${response.status}`);
+      if (response.status === 429) {
+        console.warn('⚠️ ExerciseDB API rate limited (429). Returning empty results.');
+      } else {
+        console.warn(`ExerciseDB API error: ${response.status}`);
+      }
       return [];
     }
 
@@ -68,7 +72,11 @@ export async function getExercisesByBodyPart(bodyPart: string): Promise<Exercise
     );
 
     if (!response.ok) {
-      console.warn(`ExerciseDB API error: ${response.status}`);
+      if (response.status === 429) {
+        console.warn('⚠️ ExerciseDB API rate limited (429). Returning empty results.');
+      } else {
+        console.warn(`ExerciseDB API error: ${response.status}`);
+      }
       return [];
     }
 
@@ -95,7 +103,11 @@ export async function getExercisesByEquipment(equipment: string): Promise<Exerci
     );
 
     if (!response.ok) {
-      console.warn(`ExerciseDB API error: ${response.status}`);
+      if (response.status === 429) {
+        console.warn('⚠️ ExerciseDB API rate limited (429). Returning empty results.');
+      } else {
+        console.warn(`ExerciseDB API error: ${response.status}`);
+      }
       return [];
     }
 
@@ -125,7 +137,11 @@ export async function getAllExercises(
     );
 
     if (!response.ok) {
-      console.warn(`ExerciseDB API error: ${response.status}`);
+      if (response.status === 429) {
+        console.warn('⚠️ ExerciseDB API rate limited (429). Returning empty results.');
+      } else {
+        console.warn(`ExerciseDB API error: ${response.status}`);
+      }
       return [];
     }
 
@@ -152,7 +168,11 @@ export async function getExercisesByTargetMuscle(targetMuscle: string): Promise<
     );
 
     if (!response.ok) {
-      console.warn(`ExerciseDB API error: ${response.status}`);
+      if (response.status === 429) {
+        console.warn('⚠️ ExerciseDB API rate limited (429). Returning empty results.');
+      } else {
+        console.warn(`ExerciseDB API error: ${response.status}`);
+      }
       return [];
     }
 
