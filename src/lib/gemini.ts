@@ -1,6 +1,6 @@
 /**
  * Google Gemini API Integration
- * Uses Gemini 2.5 Flash Lite for fast, free AI workout generation
+ * Uses Gemini 2.0 Flash Lite for fast, free AI workout generation
  */
 
 import { AIWorkout, AIWorkoutParams, RateLimitInfo } from '../types/aiWorkout';
@@ -82,11 +82,18 @@ Back: MEV 12 sets, MAV 18-22 sets
 Shoulders: MEV 8 sets, MAV 14-18 sets
 Biceps: MEV 8 sets, MAV 14-18 sets
 Triceps: MEV 8 sets, MAV 14-18 sets
+Forearms: MEV 6 sets, MAV 10-14 sets
 Quads: MEV 10 sets, MAV 16-20 sets
 Hamstrings: MEV 8 sets, MAV 14-18 sets
 Glutes: MEV 8 sets, MAV 14-18 sets
 Calves: MEV 8 sets, MAV 12-16 sets
 Abs/Core: MEV 6 sets, MAV 12-16 sets
+Obliques: MEV 6 sets, MAV 10-14 sets
+Traps: MEV 6 sets, MAV 12-16 sets
+Lats: MEV 10 sets, MAV 16-20 sets
+Rear Delts: MEV 8 sets, MAV 14-18 sets
+Front Delts: MEV 6 sets, MAV 12-16 sets (often trained with chest pressing)
+Side Delts: MEV 8 sets, MAV 14-18 sets
 `;
 
   // Rep ranges based on goal
