@@ -1658,7 +1658,7 @@ export const exerciseDatabase: ExerciseDefinition[] = [
     name: 'Dumbbell Shrug',
     primaryMuscles: ['traps'],
     secondaryMuscles: ['forearms'],
-    category: 'legs'
+    category: 'pull'
   },
   {
     id: 'barbell-glute-bridge',
