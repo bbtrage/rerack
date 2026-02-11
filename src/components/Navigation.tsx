@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Home, PlusCircle, History, Activity, TrendingUp, Dumbbell } from 'lucide-react';
 
 interface NavigationProps {
   currentPage: string;
@@ -8,12 +9,12 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'log', label: 'Log', icon: '✏️' },
-    { id: 'history', label: 'History', icon: '📅' },
-    { id: 'muscles', label: 'Muscles', icon: '💪' },
-    { id: 'analytics', label: 'Analytics', icon: '📈' },
-    { id: 'exercises', label: 'Exercises', icon: '🏋️' },
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'log', label: 'Log', icon: PlusCircle },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'muscles', label: 'Muscles', icon: Activity },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'exercises', label: 'Exercises', icon: Dumbbell },
   ];
 
   return (
@@ -28,41 +29,56 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
         </div>
         
         <nav className="space-y-2">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-                currentPage === item.id
-                  ? 'bg-accent-blue text-white'
-                  : 'text-gray-300 hover:bg-white/5'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
+          {navItems.map(item => {
+            const Icon = item.icon;
+            return (
+              <motion.button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                  currentPage === item.id
+                    ? 'bg-gradient-to-r from-accent-blue to-accent-purple text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/5'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+              </motion.button>
+            );
+          })}
         </nav>
       </div>
 
       {/* Mobile Bottom Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 glass-dark border-t border-white/10 px-2 py-2 z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 glass-dark border-t border-white/10 px-2 py-2 z-50 safe-area-inset-bottom">
         <div className="flex justify-around items-center">
-          {navItems.slice(0, 5).map(item => (
-            <motion.button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              whileTap={{ scale: 0.95 }}
-              className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-                currentPage === item.id
-                  ? 'text-accent-blue'
-                  : 'text-gray-400'
-              }`}
-            >
-              <span className="text-2xl mb-1">{item.icon}</span>
-              <span className="text-xs font-medium">{item.label}</span>
-            </motion.button>
-          ))}
+          {navItems.slice(0, 5).map(item => {
+            const Icon = item.icon;
+            return (
+              <motion.button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                whileTap={{ scale: 0.95 }}
+                className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all min-w-[60px] ${
+                  currentPage === item.id
+                    ? 'text-accent-blue'
+                    : 'text-gray-400'
+                }`}
+              >
+                <Icon className="w-6 h-6 mb-1" />
+                <span className="text-xs font-medium">{item.label}</span>
+                {currentPage === item.id && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-accent-blue rounded-full"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
     </>

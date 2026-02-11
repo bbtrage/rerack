@@ -1,14 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import PageLayout from '../components/PageLayout';
-import { Workout, DashboardStats } from '../types';
-import { getAllWorkouts } from '../utils/storage';
+import ProgressRing from '../components/ProgressRing';
+import AnimatedCounter from '../components/AnimatedCounter';
+import { Workout, DashboardStats, UserProfile } from '../types';
+import { getAllWorkouts, getUserProfile, saveUserProfile } from '../utils/storage';
 import { calculateDashboardStats, getMuscleGroupLabel, analyzeMuscles } from '../utils/analysis';
+import { 
+  calculateLevel, 
+  getLevelProgress, 
+  getRankFromLevel, 
+  calculateStreak 
+} from '../utils/gamification';
+import { 
+  Flame, 
+  TrendingUp, 
+  Award, 
+  Zap, 
+  Target, 
+  Calendar,
+  Dumbbell 
+} from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 const Dashboard: React.FC = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,11 +37,27 @@ const Dashboard: React.FC = () => {
     const allWorkouts = await getAllWorkouts();
     setWorkouts(allWorkouts);
     
+    const userProfile = await getUserProfile();
+    
     if (allWorkouts.length > 0) {
       const dashboardStats = calculateDashboardStats(allWorkouts);
       setStats(dashboardStats);
+      
+      // Update profile with latest stats
+      const currentStreak = calculateStreak(allWorkouts);
+      const totalVolume = dashboardStats.totalVolume;
+      
+      userProfile.currentStreak = currentStreak;
+      userProfile.longestStreak = Math.max(userProfile.longestStreak, currentStreak);
+      userProfile.totalWorkouts = allWorkouts.length;
+      userProfile.totalVolume = totalVolume;
+      userProfile.level = calculateLevel(userProfile.xp);
+      userProfile.rank = getRankFromLevel(userProfile.level);
+      
+      await saveUserProfile(userProfile);
     }
     
+    setProfile(userProfile);
     setLoading(false);
   };
 
@@ -48,9 +82,6 @@ const Dashboard: React.FC = () => {
           <div className="text-6xl mb-4">🏋️</div>
           <h2 className="text-2xl font-bold mb-2">Welcome to ReRack!</h2>
           <p className="text-gray-400 mb-6">Start tracking your workouts to see your progress here.</p>
-          <button className="px-6 py-3 bg-gradient-to-r from-accent-blue to-accent-purple rounded-lg font-semibold hover:shadow-lg hover:shadow-accent-blue/50 transition-all">
-            Log Your First Workout
-          </button>
         </motion.div>
       </PageLayout>
     );
@@ -80,31 +111,51 @@ const Dashboard: React.FC = () => {
 
   return (
     <PageLayout title="Dashboard">
-      {/* Stats Grid */}
+      {/* Hero Stats - Gamification */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          icon="📅"
-          label="This Week"
-          value={stats.weeklyWorkouts.toString()}
-          unit="workouts"
-        />
-        <StatCard
-          icon="🔥"
+        {/* Level & XP */}
+        <HeroStatCard
+          icon={<Award className="w-8 h-8" />}
+          label="Level"
+          value={profile?.level || 1}
+          subtitle={profile?.rank.toUpperCase() || 'BEGINNER'}
+          gradient="from-yellow-500 to-orange-500"
+        >
+          <ProgressRing 
+            progress={getLevelProgress(profile?.xp || 0)} 
+            size={60}
+            strokeWidth={4}
+            color="#f59e0b"
+          >
+            <span className="text-lg font-bold">{profile?.level || 1}</span>
+          </ProgressRing>
+        </HeroStatCard>
+
+        {/* Streak */}
+        <HeroStatCard
+          icon={<Flame className="w-8 h-8" />}
           label="Streak"
-          value={stats.workoutStreak.toString()}
-          unit="days"
+          value={profile?.currentStreak || 0}
+          subtitle="DAYS"
+          gradient="from-orange-500 to-red-500"
         />
-        <StatCard
-          icon="💪"
+
+        {/* Weekly Workouts */}
+        <HeroStatCard
+          icon={<Calendar className="w-8 h-8" />}
+          label="This Week"
+          value={stats.weeklyWorkouts}
+          subtitle="WORKOUTS"
+          gradient="from-blue-500 to-cyan-500"
+        />
+
+        {/* Total Volume */}
+        <HeroStatCard
+          icon={<Dumbbell className="w-8 h-8" />}
           label="Total Volume"
           value={formatVolume(stats.totalVolume)}
-          unit="lbs"
-        />
-        <StatCard
-          icon="⚡"
-          label="Strongest"
-          value={stats.strongestMuscle ? getMuscleGroupLabel(stats.strongestMuscle).slice(0, 8) : 'N/A'}
-          unit=""
+          subtitle="LBS LIFTED"
+          gradient="from-purple-500 to-pink-500"
         />
       </div>
 
@@ -115,9 +166,12 @@ const Dashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass-dark rounded-2xl p-6"
+          className="glass-dark rounded-2xl p-6 border border-white/10"
         >
-          <h3 className="text-xl font-bold mb-4">Muscle Balance</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="w-5 h-5 text-accent-blue" />
+            <h3 className="text-xl font-bold">Muscle Balance</h3>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <RadarChart data={radarData}>
               <PolarGrid stroke="#ffffff20" />
@@ -133,9 +187,12 @@ const Dashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-dark rounded-2xl p-6"
+          className="glass-dark rounded-2xl p-6 border border-white/10"
         >
-          <h3 className="text-xl font-bold mb-4">Volume Trend</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-accent-green" />
+            <h3 className="text-xl font-bold">Volume Trend</h3>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={volumeTrendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
@@ -159,9 +216,12 @@ const Dashboard: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="glass-dark rounded-2xl p-6"
+        className="glass-dark rounded-2xl p-6 border border-white/10 bg-gradient-to-r from-purple-900/20 to-pink-900/20"
       >
-        <h3 className="text-xl font-bold mb-4">💡 Focus Recommendation</h3>
+        <div className="flex items-center gap-2 mb-4">
+          <Zap className="w-5 h-5 text-accent-purple" />
+          <h3 className="text-xl font-bold">Focus Recommendation</h3>
+        </div>
         <div className="flex items-center space-x-4">
           <div className="flex-1">
             <p className="text-gray-400 mb-2">Based on your training history, you should focus on:</p>
@@ -169,7 +229,7 @@ const Dashboard: React.FC = () => {
               {stats.weakestMuscle ? getMuscleGroupLabel(stats.weakestMuscle) : 'Keep training!'}
             </p>
           </div>
-          <div className="text-6xl">🎯</div>
+          <Target className="w-16 h-16 text-accent-purple/50" />
         </div>
       </motion.div>
 
@@ -180,7 +240,7 @@ const Dashboard: React.FC = () => {
         transition={{ delay: 0.4 }}
         className="mt-6"
       >
-        <h3 className="text-xl font-bold mb-4">Recent Workouts</h3>
+        <h3 className="text-xl font-bold mb-4">Recent Activity</h3>
         <div className="space-y-3">
           {workouts.slice(0, 5).map((workout, index) => (
             <motion.div
@@ -188,7 +248,8 @@ const Dashboard: React.FC = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 + index * 0.1 }}
-              className="glass-dark rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer"
+              whileHover={{ scale: 1.02, x: 4 }}
+              className="glass-dark rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer border border-white/5"
             >
               <div className="flex justify-between items-center">
                 <div>
@@ -216,15 +277,37 @@ const Dashboard: React.FC = () => {
   );
 };
 
-const StatCard: React.FC<{ icon: string; label: string; value: string; unit: string }> = ({ icon, label, value, unit }) => (
+const HeroStatCard: React.FC<{ 
+  icon: React.ReactNode; 
+  label: string; 
+  value: number | string; 
+  subtitle: string;
+  gradient: string;
+  children?: React.ReactNode;
+}> = ({ icon, label, value, subtitle, gradient, children }) => (
   <motion.div
-    whileHover={{ scale: 1.05 }}
-    className="glass-dark rounded-xl p-4 text-center"
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    whileHover={{ scale: 1.05, y: -4 }}
+    className="glass-dark rounded-2xl p-6 border border-white/10 relative overflow-hidden"
   >
-    <div className="text-3xl mb-2">{icon}</div>
-    <div className="text-2xl font-bold">{value}</div>
-    <div className="text-xs text-gray-400 uppercase">{unit}</div>
-    <div className="text-sm text-gray-400 mt-1">{label}</div>
+    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-10`}></div>
+    <div className="relative">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`text-transparent bg-gradient-to-br ${gradient} bg-clip-text`}>
+          {icon}
+        </div>
+        {children}
+      </div>
+      {!children && (
+        <div className="text-3xl font-bold mb-1">
+          <AnimatedCounter value={typeof value === 'number' ? value : 0} />
+          {typeof value === 'string' && value}
+        </div>
+      )}
+      <div className="text-xs text-gray-400 font-semibold">{subtitle}</div>
+      <div className="text-sm text-gray-500 mt-1">{label}</div>
+    </div>
   </motion.div>
 );
 

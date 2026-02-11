@@ -1,5 +1,6 @@
 import localforage from 'localforage';
-import { Workout, PersonalRecord } from '../types';
+import { Workout, PersonalRecord, UserProfile, WorkoutTemplate } from '../types';
+import { createDefaultProfile } from './gamification';
 
 // Configure localforage
 const workoutStore = localforage.createInstance({
@@ -10,6 +11,16 @@ const workoutStore = localforage.createInstance({
 const prStore = localforage.createInstance({
   name: 'rerack',
   storeName: 'personalRecords'
+});
+
+const profileStore = localforage.createInstance({
+  name: 'rerack',
+  storeName: 'profile'
+});
+
+const templateStore = localforage.createInstance({
+  name: 'rerack',
+  storeName: 'templates'
 });
 
 // Workouts
@@ -63,4 +74,31 @@ export const getPersonalRecordForExercise = async (exerciseId: string): Promise<
     const currentScore = current.weight * current.reps;
     return currentScore > bestScore ? current : best;
   });
+};
+
+// User Profile
+export const getUserProfile = async (): Promise<UserProfile> => {
+  const profile = await profileStore.getItem<UserProfile>('profile');
+  return profile || createDefaultProfile();
+};
+
+export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
+  await profileStore.setItem('profile', profile);
+};
+
+// Workout Templates
+export const saveTemplate = async (template: WorkoutTemplate): Promise<void> => {
+  await templateStore.setItem(template.id, template);
+};
+
+export const getAllTemplates = async (): Promise<WorkoutTemplate[]> => {
+  const templates: WorkoutTemplate[] = [];
+  await templateStore.iterate((value: any) => {
+    templates.push(value as WorkoutTemplate);
+  });
+  return templates;
+};
+
+export const deleteTemplate = async (id: string): Promise<void> => {
+  await templateStore.removeItem(id);
 };
