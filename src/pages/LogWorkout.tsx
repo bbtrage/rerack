@@ -7,7 +7,41 @@ import { Workout, WorkoutExercise, ExerciseSet } from '../types';
 import { saveWorkout, getUserProfile, saveUserProfile, getAllWorkouts } from '../utils/storage';
 import { exerciseDatabase } from '../data/exercises';
 import { calculateWorkoutXP, calculateStreak } from '../utils/gamification';
-import { Clock, X, Search, Trash2 } from 'lucide-react';
+import { Clock, X, Search, Trash2, Eye } from 'lucide-react';
+import ExerciseDemo from '../components/ExerciseDemo';
+import GuidedReps from '../components/GuidedReps';
+import { useExerciseGifUrl } from '../hooks/useExerciseGif';
+
+// Small GIF preview component for workout page
+const ExerciseGifPreview: React.FC<{ exerciseName: string; onClick?: () => void }> = ({ 
+  exerciseName, 
+  onClick 
+}) => {
+  const gifUrl = useExerciseGifUrl(exerciseName);
+
+  if (!gifUrl) return null;
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      onClick={onClick}
+      className="relative w-16 h-16 rounded-lg overflow-hidden cursor-pointer bg-dark-bg border border-white/10"
+    >
+      <img
+        src={gifUrl}
+        alt={exerciseName}
+        className="w-full h-full object-cover"
+        style={{
+          filter: 'invert(1) hue-rotate(180deg) brightness(0.85) contrast(1.1)',
+        }}
+        loading="lazy"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end justify-center pb-1">
+        <Eye className="w-4 h-4 text-white" />
+      </div>
+    </motion.div>
+  );
+};
 
 const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const [workoutName, setWorkoutName] = useState('');
@@ -18,6 +52,8 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const [startTime] = useState(new Date().toISOString());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
+  const [showExerciseDemo, setShowExerciseDemo] = useState<string | null>(null);
+  const [showGuidedReps, setShowGuidedReps] = useState<string | null>(null);
   const restDuration = 90; // default 90 seconds
   const { showToast } = useToast();
 
@@ -216,7 +252,13 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
               className="glass-dark rounded-2xl p-6 border border-white/10"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">{getExerciseName(exercise.exerciseId)}</h3>
+                <div className="flex items-center gap-3">
+                  <ExerciseGifPreview 
+                    exerciseName={getExerciseName(exercise.exerciseId)} 
+                    onClick={() => setShowExerciseDemo(exercise.exerciseId)}
+                  />
+                  <h3 className="text-xl font-bold">{getExerciseName(exercise.exerciseId)}</h3>
+                </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => removeExercise(exerciseIndex)}
@@ -365,6 +407,50 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
               duration={restDuration}
               onComplete={() => setShowRestTimer(false)}
               onSkip={() => setShowRestTimer(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Exercise Demo Modal */}
+        <AnimatePresence>
+          {showExerciseDemo && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowExerciseDemo(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              >
+                <ExerciseDemo
+                  exerciseName={getExerciseName(showExerciseDemo)}
+                  onClose={() => setShowExerciseDemo(null)}
+                  onStartGuidedReps={() => {
+                    setShowGuidedReps(showExerciseDemo);
+                    setShowExerciseDemo(null);
+                  }}
+                  showGuidedButton={true}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Guided Reps Modal */}
+        <AnimatePresence>
+          {showGuidedReps && (
+            <GuidedReps
+              exerciseName={getExerciseName(showGuidedReps)}
+              onClose={() => setShowGuidedReps(null)}
+              onComplete={(reps) => {
+                setShowGuidedReps(null);
+              }}
             />
           )}
         </AnimatePresence>
