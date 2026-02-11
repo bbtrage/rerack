@@ -66,12 +66,21 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests that aren't for known APIs
-  if (url.origin !== self.location.origin && 
-      !url.origin.includes('supabase.co') &&
-      !url.origin.includes('exercisedb') &&
-      !url.origin.includes('googleapis.com') &&
-      !url.origin.includes('gstatic.com')) {
+  // Allowed third-party origins for caching
+  const ALLOWED_ORIGINS = [
+    'https://fonts.googleapis.com',
+    'https://fonts.gstatic.com'
+  ];
+  
+  // Check if origin is allowed (same-origin or in allowed list)
+  const isAllowedOrigin = url.origin === self.location.origin ||
+                          ALLOWED_ORIGINS.includes(url.origin) ||
+                          url.hostname.endsWith('.supabase.co') ||
+                          url.hostname.endsWith('.exercisedb.io') ||
+                          url.hostname === 'exercisedb.p.rapidapi.com';
+
+  // Skip requests from disallowed origins
+  if (!isAllowedOrigin) {
     return;
   }
 
@@ -82,13 +91,15 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Fonts - Cache First
-  if (url.origin.includes('googleapis.com') || url.origin.includes('gstatic.com')) {
+  if (ALLOWED_ORIGINS.includes(url.origin)) {
     event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));
     return;
   }
 
   // API calls (Supabase, ExerciseDB) - Network First
-  if (url.origin.includes('supabase.co') || url.origin.includes('exercisedb')) {
+  if (url.hostname.endsWith('.supabase.co') || 
+      url.hostname.endsWith('.exercisedb.io') ||
+      url.hostname === 'exercisedb.p.rapidapi.com') {
     event.respondWith(networkFirstStrategy(request, API_CACHE));
     return;
   }
