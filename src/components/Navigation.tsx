@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, PlusCircle, History, Activity, TrendingUp, Dumbbell, LogOut } from 'lucide-react';
+import { Home, PlusCircle, History, Activity, TrendingUp, Dumbbell, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isSupabaseConfigured } from '../lib/supabase';
 
@@ -14,6 +14,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'ai-generator', label: 'AI', icon: Sparkles },
     { id: 'log', label: 'Log', icon: PlusCircle },
     { id: 'history', label: 'History', icon: History },
     { id: 'muscles', label: 'Muscles', icon: Activity },
