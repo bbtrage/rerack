@@ -15,6 +15,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import AuthGuard from './components/AuthGuard';
 import MigrationModal from './components/MigrationModal';
 import OfflineIndicator from './components/OfflineIndicator';
+import InstallPrompt from './components/InstallPrompt';
 import { isSupabaseConfigured } from './lib/supabase';
 import { hasLocalData } from './utils/storage';
 
@@ -87,6 +88,7 @@ function MainApp() {
           />
         )}
         <OfflineIndicator />
+        <InstallPrompt />
         <MigrationModal
           isOpen={showMigrationModal}
           onClose={() => setShowMigrationModal(false)}
