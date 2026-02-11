@@ -165,6 +165,35 @@ export type Database = {
           created_at?: string;
         };
       };
+      ai_workout_templates: {
+        Row: {
+          id: string;
+          user_id: string;
+          workout_name: string;
+          muscle_groups: string[];
+          config: any; // JSONB
+          workout_data: any; // JSONB
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          workout_name: string;
+          muscle_groups: string[];
+          config: any;
+          workout_data: any;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          workout_name?: string;
+          muscle_groups?: string[];
+          config?: any;
+          workout_data?: any;
+          created_at?: string;
+        };
+      };
     };
   };
 };
