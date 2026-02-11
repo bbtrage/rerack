@@ -32,6 +32,10 @@ export const useToast = () => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  const hideToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
   const showToast = useCallback((message: string, type: ToastType = 'info', action?: Toast['action']) => {
     const id = Date.now().toString();
     const newToast: Toast = { id, message, type, action };
@@ -44,11 +48,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         hideToast(id);
       }, 4000);
     }
-  }, []);
-
-  const hideToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+  }, [hideToast]);
 
   const getIcon = (type: ToastType) => {
     switch (type) {

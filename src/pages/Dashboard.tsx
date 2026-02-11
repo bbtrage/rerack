@@ -10,7 +10,6 @@ import {
   calculateLevel, 
   getLevelProgress, 
   getRankFromLevel, 
-  calculateWorkoutXP,
   calculateStreak 
 } from '../utils/gamification';
 import { 

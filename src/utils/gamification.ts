@@ -134,10 +134,9 @@ export const achievementDefinitions: Record<AchievementType, Omit<Achievement, '
 export const checkAchievementUnlock = (
   achievementId: AchievementType,
   profile: UserProfile,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   workouts: Workout[]
 ): boolean => {
-  const achievement = achievementDefinitions[achievementId];
-  
   // Check if already unlocked
   if (profile.achievements.some(a => a.id === achievementId)) {
     return false;
