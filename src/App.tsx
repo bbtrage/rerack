@@ -8,6 +8,7 @@ import WorkoutHistory from './pages/WorkoutHistory';
 import MuscleAnalysis from './pages/MuscleAnalysis';
 import Analytics from './pages/Analytics';
 import ExerciseLibrary from './pages/ExerciseLibrary';
+import AIWorkoutGenerator from './pages/AIWorkoutGenerator';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
@@ -59,6 +60,8 @@ function MainApp() {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
+      case 'ai-generator':
+        return <AIWorkoutGenerator />;
       case 'log':
         return <LogWorkout onComplete={() => setCurrentPage('dashboard')} />;
       case 'history':
@@ -81,7 +84,7 @@ function MainApp() {
         <div className="md:ml-64 pb-20 md:pb-0">
           {renderPage()}
         </div>
-        {currentPage !== 'log' && (
+        {currentPage !== 'log' && currentPage !== 'ai-generator' && (
           <FloatingActionButton 
             onClick={() => setCurrentPage('log')}
             label="Start Workout"

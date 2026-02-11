@@ -174,7 +174,7 @@ const AIWorkoutGenerator: React.FC = () => {
   const canProceedToConfig = selectedMuscles.length > 0;
 
   return (
-    <PageLayout>
+    <PageLayout title="">
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <motion.div
