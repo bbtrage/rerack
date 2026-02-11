@@ -111,8 +111,7 @@ const ExerciseLibrary: React.FC = () => {
           <GuidedReps
             exerciseName={selectedExerciseData.name}
             onClose={() => setShowGuidedReps(false)}
-            onComplete={(reps) => {
-              console.log(`Completed ${reps} reps of ${selectedExerciseData.name}`);
+            onComplete={() => {
               setShowGuidedReps(false);
             }}
           />

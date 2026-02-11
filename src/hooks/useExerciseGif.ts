@@ -116,5 +116,6 @@ export function usePrefetchExerciseGifs(exerciseNames: string[]): void {
     return () => {
       mounted = false;
     };
-  }, [exerciseNames]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exerciseNames.join(',')]);
 }

@@ -449,7 +449,6 @@ const LogWorkout: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
               exerciseName={getExerciseName(showGuidedReps)}
               onClose={() => setShowGuidedReps(null)}
               onComplete={(reps) => {
-                console.log(`Completed ${reps} reps`);
                 setShowGuidedReps(null);
               }}
             />
