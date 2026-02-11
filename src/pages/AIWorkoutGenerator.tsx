@@ -63,6 +63,7 @@ const AIWorkoutGenerator: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [retryState, setRetryState] = useState<{ attempt: number; delay: number } | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [lastGenerationTimestamp, setLastGenerationTimestamp] = useState<number>(0);
 
   // Request lock to prevent duplicate calls
   const isGeneratingRef = useRef(false);
@@ -74,18 +75,25 @@ const AIWorkoutGenerator: React.FC = () => {
 
   // Update cooldown timer
   React.useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
     if (isInCooldown()) {
       setCooldownSeconds(getCooldownRemaining());
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const remaining = getCooldownRemaining();
         setCooldownSeconds(remaining);
-        if (remaining === 0) {
+        if (remaining === 0 && interval) {
           clearInterval(interval);
         }
       }, 1000);
-      return () => clearInterval(interval);
     }
-  }, [generatedWorkout]);
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [lastGenerationTimestamp]); // Update when a new workout is generated
 
   const handleToggleMuscle = (muscle: MuscleGroup) => {
     setSelectedMuscles((prev) =>
@@ -155,6 +163,7 @@ const AIWorkoutGenerator: React.FC = () => {
       
       setGeneratedWorkout(workout);
       setStep('result');
+      setLastGenerationTimestamp(Date.now()); // Trigger cooldown timer update
       showToast('Workout generated successfully! 🎉', 'success');
       setCooldownSeconds(30);
     } catch (err: any) {

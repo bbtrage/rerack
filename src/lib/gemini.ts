@@ -245,19 +245,20 @@ async function retryWithBackoff<T>(
   try {
     return await fn();
   } catch (error: any) {
-    // Only retry on 429 errors
+    // Only retry on 429 errors, and only up to MAX_RETRIES attempts
     if (error.status !== 429 || retryCount >= MAX_RETRIES) {
       throw error;
     }
 
-    // Calculate delay: 5s, 10s, 20s
+    // Calculate delay: 5s, 10s, 20s for attempts 1, 2, 3
     const delay = Math.pow(2, retryCount) * 5000;
     
-    console.log(`⏳ Rate limited (429). Retrying in ${delay / 1000}s... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+    const attemptNumber = retryCount + 1;
+    console.log(`⏳ Rate limited (429). Retrying in ${delay / 1000}s... (retry ${attemptNumber}/${MAX_RETRIES})`);
     
     // Notify caller about retry
     if (onRetry) {
-      onRetry(retryCount + 1, delay);
+      onRetry(attemptNumber, delay);
     }
     
     await sleep(delay);
