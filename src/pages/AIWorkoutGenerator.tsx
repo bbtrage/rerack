@@ -116,7 +116,7 @@ const AIWorkoutGenerator: React.FC = () => {
     }
 
     if (!isGeminiConfigured()) {
-      setError('Gemini API key not configured. Please add REACT_APP_GEMINI_API_KEY to your environment variables.');
+      setError('Groq API key not configured. Please add REACT_APP_GROQ_API_KEY to your environment variables.\n\nGet a free key at: https://console.groq.com');
       return;
     }
 
@@ -254,17 +254,17 @@ const AIWorkoutGenerator: React.FC = () => {
             <div className="mt-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-300 text-left">
-                <strong>🔑 API Key Required</strong>
-                <p className="mt-1">Add REACT_APP_GEMINI_API_KEY to your .env file to use this feature.</p>
+                <strong>🔑 Groq API Key Required</strong>
+                <p className="mt-1">Add REACT_APP_GROQ_API_KEY to your .env file to use this feature.</p>
                 <p className="mt-1">
                   Get a free key at{' '}
                   <a
-                    href="https://aistudio.google.com/app/apikey"
+                    href="https://console.groq.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline hover:text-yellow-200"
                   >
-                    Google AI Studio
+                    console.groq.com
                   </a>
                 </p>
               </div>
@@ -274,7 +274,7 @@ const AIWorkoutGenerator: React.FC = () => {
             <div className="mt-2 text-sm text-gray-400 flex items-center justify-center gap-4">
               <span>{remaining}/{rateLimitInfo.limit} AI workouts remaining today</span>
               <span className="text-accent-blue">•</span>
-              <span>{remainingMinuteCalls}/15 requests available this minute</span>
+              <span>{remainingMinuteCalls}/30 requests available this minute</span>
             </div>
           )}
         </motion.div>
