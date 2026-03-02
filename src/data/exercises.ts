@@ -1654,13 +1654,6 @@ export const exerciseDatabase: ExerciseDefinition[] = [
     category: 'legs'
   },
   {
-    id: 'dumbbell-shrug',
-    name: 'Dumbbell Shrug',
-    primaryMuscles: ['traps'],
-    secondaryMuscles: ['forearms'],
-    category: 'pull'
-  },
-  {
     id: 'barbell-glute-bridge',
     name: 'Barbell Glute Bridge',
     primaryMuscles: ['glutes'],
@@ -2179,15 +2172,15 @@ export const exerciseDatabase: ExerciseDefinition[] = [
     category: 'pull'
   },
   {
-    id: 'upright-row',
-    name: 'Upright Row',
-    primaryMuscles: ['traps', 'shoulders'],
-    secondaryMuscles: [],
+    id: 'dumbbell-shrug',
+    name: 'Dumbbell Shrug',
+    primaryMuscles: ['traps'],
+    secondaryMuscles: ['forearms'],
     category: 'pull'
   },
   {
-    id: 'barbell-upright-row-trap',
-    name: 'Barbell Upright Row',
+    id: 'upright-row',
+    name: 'Upright Row',
     primaryMuscles: ['traps', 'shoulders'],
     secondaryMuscles: [],
     category: 'pull'
@@ -2204,20 +2197,6 @@ export const exerciseDatabase: ExerciseDefinition[] = [
     name: 'Overhead Shrug',
     primaryMuscles: ['traps'],
     secondaryMuscles: ['shoulders'],
-    category: 'pull'
-  },
-  {
-    id: 'face-pull-trap',
-    name: 'Face Pull',
-    primaryMuscles: ['shoulders', 'back'],
-    secondaryMuscles: ['traps'],
-    category: 'pull'
-  },
-  {
-    id: 'rack-pull-trap',
-    name: 'Rack Pull',
-    primaryMuscles: ['back', 'traps'],
-    secondaryMuscles: ['forearms', 'glutes'],
     category: 'pull'
   },
   {

@@ -7,6 +7,105 @@ import { searchExercises, ExerciseDBExercise } from '../lib/exercisedb';
 import { getExerciseMapping, cacheExerciseMapping, cacheExercise } from './exerciseGifCache';
 
 /**
+ * Deterministic override map: app exercise display name → ExerciseDB search term.
+ * - string value: use this search term instead of the raw exercise name
+ * - null value: exercise has no ExerciseDB entry; skip API call and show static fallback
+ * - key absent (undefined): fall through to fuzzy matching
+ */
+const EXERCISE_NAME_OVERRIDES: Record<string, string | null> = {
+  // Chest — bench press variants need distinct search terms to avoid collisions
+  'Bench Press': 'barbell bench press',
+  'Incline Bench Press': 'incline barbell bench press',
+  'Decline Bench Press': 'decline barbell bench press',
+  'Close-Grip Bench Press': 'close grip bench press',
+  'Wide-Grip Bench Press': 'wide grip bench press',
+  'Reverse Grip Bench Press': 'reverse grip bench press',
+  'Board Press': null,
+  'Spoto Press': null,
+  'Larsen Press': null,
+  'Pin Press': null,
+  'Bamboo Bar Bench': null,
+
+  // Back — row and deadlift variants
+  'Barbell Row': 'barbell bent over row',
+  'Pendlay Row': 'pendlay row',
+  'Yates Row': 'yates row',
+  'Meadows Row': 'meadows row',
+  'Seal Row': 'seal row',
+  'Conventional Deadlift': 'barbell deadlift',
+  'Sumo Deadlift': 'sumo deadlift',
+  'Snatch Grip Deadlift': 'snatch grip deadlift',
+  'Deficit Deadlift': 'deficit deadlift',
+  'Jefferson Deadlift': null,
+  'Hack Lift': null,
+  'Typewriter Pull-up': null,
+
+  // Shoulders
+  'Overhead Press': 'barbell overhead press',
+  'Z Press': null,
+  'Viking Press': null,
+  'Javelin Press': null,
+  'Bradford Press': 'bradford press',
+  'Lu Raise': 'lu raise',
+  'W Raise': 'w raise',
+  'Scott Press': 'scott press',
+
+  // Biceps
+  'Barbell Curl': 'barbell curl',
+  'Drag Curl': 'drag curl',
+  '21s Curl': '21s',
+  'Spider Curl': 'spider curl',
+  'Zottman Curl': 'zottman curl',
+  'Waiter Curl': 'waiter curl',
+  'Bayesian Curl': 'bayesian curl',
+  'Poundstone Curl': 'poundstone curl',
+
+  // Triceps
+  'JM Press': 'jm press',
+  'California Press': 'california press',
+  'Tate Press': 'tate press',
+  'Gironda Dip': null,
+
+  // Quads — squat variants
+  'Back Squat': 'barbell squat',
+  'Front Squat': 'barbell front squat',
+  'Zercher Squat': 'zercher squat',
+  'Overhead Squat': 'overhead squat',
+  'Safety Bar Squat': 'safety bar squat',
+  'Cossack Squat': 'cossack squat',
+  'Sissy Squat': 'sissy squat',
+  'Anderson Squat': null,
+  'Skater Squat': null,
+  'Steinborn Squat': null,
+
+  // Hamstrings
+  'Romanian Deadlift': 'romanian deadlift',
+  'Nordic Curl': 'nordic hamstring curl',
+  'Glute Ham Raise': 'glute ham raise',
+  'Reverse Hyper': 'reverse hyper',
+  'Slider Leg Curl': null,
+  'Jefferson Curl': null,
+
+  // Glutes
+  'Hip Thrust': 'barbell hip thrust',
+  'Barbell Hip Thrust': 'barbell hip thrust',
+
+  // Shoulders / Lateral raises
+  'Dumbbell Lateral Raise': 'lateral raise',
+};
+
+/**
+ * Look up a deterministic ExerciseDB search term for a given app exercise display name.
+ * Returns:
+ *   - string: use as ExerciseDB search term
+ *   - null: exercise has no ExerciseDB entry (skip API call)
+ *   - undefined: no override, fall through to fuzzy matching
+ */
+export function getExerciseNameOverride(displayName: string): string | null | undefined {
+  return EXERCISE_NAME_OVERRIDES[displayName];
+}
+
+/**
  * Calculate similarity score between two strings (0-1)
  * Uses simple Levenshtein distance-based approach
  */
@@ -150,17 +249,30 @@ export function getExerciseVariations(name: string): string[] {
 }
 
 /**
- * Find best match trying multiple variations
+ * Find best match trying multiple variations.
+ * Checks the deterministic override map first:
+ *   - If the override is null, returns null immediately (exercise has no ExerciseDB entry).
+ *   - If the override is a string, uses that as the search term.
+ *   - If no override exists, falls through to fuzzy matching on the original name and its variations.
  */
 export async function findBestMatchWithVariations(
   appExerciseName: string,
   minConfidence: number = 0.6
 ): Promise<ExerciseDBExercise | null> {
-  // Try original name first
+  // 1. Check deterministic override map first
+  const override = getExerciseNameOverride(appExerciseName);
+  if (override === null) return null; // explicitly no ExerciseDB entry
+  if (override !== undefined) {
+    const match = await findBestMatch(override, minConfidence);
+    if (match) return match;
+    // fall through if override term didn't produce a result
+  }
+
+  // 2. Fuzzy matching on original name
   let match = await findBestMatch(appExerciseName, minConfidence);
   if (match) return match;
 
-  // Try variations
+  // 3. Try normalized variations
   const variations = getExerciseVariations(appExerciseName);
   for (const variation of variations) {
     if (variation === appExerciseName) continue;
